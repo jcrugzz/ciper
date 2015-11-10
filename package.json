@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/jcrugzz/ciper.git"
+    "url": "git+ssh://github.com/jcrugzz/ciper.git"
   },
   "keywords": [
     "ci",
