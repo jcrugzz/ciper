@@ -238,13 +238,14 @@ Ciper.prototype.extractNpm = function (repo, callback) {
  */
 Ciper.prototype.defaults = function (pkg, repo) {
   var pack = {};
-
   //
   // Extract proper repo URL or use the one passed in.
   //
   repo = repo || pkg.repo || (pkg.repository || {}).url;
+  var proj = this.git.project(repo);
+
   pack.repo = repo;
-  pack.short = pkg.short || this.git.project(repo);
+  pack.short = pkg.short || [proj.user, proj.repo].join('/');
   pack.name = pkg.name;
   //
   // Default to 4.2 because thats what we should be assuming at this point
