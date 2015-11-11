@@ -6,7 +6,7 @@ var proxyquire = require('proxyquire').noCallThru().noPreserveCache();
 
 assume.use(require('assume-sinon'));
 
-function MockJenkins(url) {
+function MockJenkins() {
   this.job = {};
   this.job.create = sinon.stub().yields();
   this.job.destroy = sinon.stub().yields();
@@ -31,14 +31,14 @@ describe('Ciper tests', function () {
   });
 
   function cleanupper(arg) {
-    return (done) => {
+    return done => {
       ciper.unsync(arg, done);
     };
   }
 
   it('should sync orgs with the organizations passed in', function (done) {
     var cleanup = cleanupper('webhooks-test');
-    ciper.syncOrgs(['webhooks-test'], function (err, result) {
+    ciper.syncOrgs(['webhooks-test'], function (err) {
       assume(err).to.be.falsey();
       assume(ciper.jenkins.job.create).is.called(1);
       cleanup(done);
@@ -47,7 +47,7 @@ describe('Ciper tests', function () {
 
   it('should be able to directly sync a single organization', function (done) {
     var cleanup = cleanupper('webhooks-test');
-    ciper.sync('webhooks-test', function (err, result) {
+    ciper.sync('webhooks-test', function (err) {
       assume(err).to.be.falsey();
       assume(ciper.jenkins.job.create).is.called(1);
       cleanup(done);

@@ -93,7 +93,7 @@ Ciper.prototype.constructor = Ciper;
 Ciper.prototype.syncOrgs = function syncOrgs(organizations, callback) {
   if (!callback && typeof organizations === 'function') {
     callback = organizations;
-    organizations = undefined;
+    organizations = null;
   }
 
   var orgs = organizations || this.organizations;
@@ -105,7 +105,7 @@ Ciper.prototype.syncOrgs = function syncOrgs(organizations, callback) {
     this.sync(assign({
       organization: org
     }, this.pollDefaults), next);
-  }, (err) => {
+  }, err => {
     if (err) { return callback(err); }
 
     debug('sync orgs finish %s', orgs);
@@ -119,7 +119,7 @@ Ciper.prototype.syncOrgs = function syncOrgs(organizations, callback) {
  */
 Ciper.prototype._pollSyncOrgs = function () {
   this.emit('poll:start');
-  this.syncOrgs( err => {
+  this.syncOrgs(err => {
     if (err) { return this.emit('error', err); }
     this.emit('poll:finish');
   });
@@ -158,7 +158,7 @@ Ciper.prototype.gen = function (name, execute) {
       // Use ssh_url because we can parse it with githulk and we will need it to
       // properly template the XML for jenkins
       //
-      var repos = result.map( r => r.ssh_url );
+      var repos = result.map(r => r.ssh_url);
       //
       // 2. Iterate over the repos and check if they are valid
       // targets and return the proper data structure that we want for setting up
@@ -166,8 +166,8 @@ Ciper.prototype.gen = function (name, execute) {
       //
       async.mapLimit(repos, this.limit,
         this.extractNpm.bind(this),
-      (err, packages) => {
-        if (err) { return callback(err); }
+      (er, packages) => {
+        if (er) { return callback(er); }
         //
         // 3. Filter out the invalid targets and setup each package in both github
         // and in jenkins.
@@ -177,8 +177,8 @@ Ciper.prototype.gen = function (name, execute) {
         //
         async.eachLimit(packages.filter(Boolean), this.limit,
           execute,
-        (err) => {
-          if (err) { return callback(err); }
+        e => {
+          if (e) { return callback(e); }
           debug(name + ':finish %s', org);
           this.emit(name, org);
           callback();
@@ -255,7 +255,7 @@ Ciper.prototype.defaults = function (pkg, repo) {
   // Copy over an arbitrary keys that might matter when it comes to templating,
   // this makes us more flexible
   //
-  return Object.keys(pkg).reduce(function(acc, key) {
+  return Object.keys(pkg).reduce(function (acc, key) {
     if (!acc[key]) { acc[key] = pkg[key]; }
     return acc;
   }, pack);
@@ -278,7 +278,7 @@ Ciper.prototype.setup = function (pkg, callback) {
   async.parallel([
     this.hooks.bind(this, repo),
     this.createJob.bind(this, pkg)
-  ], (err) => {
+  ], err => {
     if (err) { return callback(err); }
     debug('setup:finish %s', repo);
     callback();
@@ -295,7 +295,7 @@ Ciper.prototype.unsetup = function (pkg, callback) {
   async.parallel([
     this.deleteHooks.bind(this, repo),
     this.deleteJob.bind(this, pkg)
-  ], (err) => {
+  ], err => {
     if (err) { return callback(err); }
     debug('unsetup finish %j', pkg);
     callback();
@@ -315,9 +315,9 @@ Ciper.prototype.hooks = function (repo, callback) {
     // Establish that we have the correct hooks enabled
     //
     var hooks = results.map(
-      (hook) => validHook(hook.name)
+      hook => validHook(hook.name)
         ? hook.name
-        : null ).filter(Boolean);
+        : null).filter(Boolean);
     //
     // No-op if they already exist
     //
@@ -360,7 +360,6 @@ Ciper.prototype.createJob = function (pkg, callback) {
  * Delete the jenkins job
  */
 Ciper.prototype.deleteJob = function (pkg, callback) {
-  var repo = pkg.repo;
   var name = pkg.name;
 
   this.jenkins.job.destroy([name, 'build', 'pr'].join('-'), callback);
@@ -416,9 +415,9 @@ Ciper.prototype.deleteHooks = function (repo, callback) {
  */
 Ciper.prototype._deleteHooks = function (repo, results, callback) {
   var optsArr = results.map(
-    (res) => validHook(res.name)
+    res => validHook(res.name)
       ? { id: res.id }
-      : null ).filter(Boolean);
+      : null).filter(Boolean);
 
   async.each(optsArr,
       this.git.webhooks.delete.bind(this.git.webhooks, repo),
