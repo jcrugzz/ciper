@@ -36,7 +36,7 @@
   "dependencies": {
     "async": "^1.5.0",
     "diagnostics": "^1.0.1",
-    "githulk": "^0.3.0",
+    "githulk": "^1.0.0",
     "jenkins": "^0.11.0",
     "object-assign": "^4.0.1",
     "string-template": "^0.2.1"
