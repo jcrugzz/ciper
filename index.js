@@ -36,6 +36,7 @@ function Ciper(options) {
   // Jenkins admins
   //
   this.admins = options.admins || [];
+  this.nodeType = options.nodeType || '';
 
   //
   // Other properties that need to be templated into the jenkins build
@@ -350,9 +351,10 @@ Ciper.prototype.createJob = function (pkg, callback) {
     //
     this.jenkins.job.create([name, 'build', 'pr'].join('-'),
       this.templateXml(xml, assign({
-        admins: this.admins.join(','),
+        admins: this.admins.join(' '),
         credentialsId: this.credentialsId,
-        gitHubAuthId: this.gitHubAuthId
+        gitHubAuthId: this.gitHubAuthId,
+        nodeType: this.nodeType
       }, pkg)), callback);
   });
 };
