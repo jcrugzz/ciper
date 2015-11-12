@@ -355,7 +355,11 @@ Ciper.prototype.createJob = function (pkg, callback) {
         credentialsId: this.credentialsId,
         gitHubAuthId: this.gitHubAuthId,
         nodeType: this.nodeType
-      }, pkg)), callback);
+      }, pkg)), err => {
+        if (err && /already exists/.test(err.message)) return callback();
+
+        callback(err);
+      });
   });
 };
 
@@ -408,7 +412,7 @@ Ciper.prototype.deleteHooks = function (repo, callback) {
     this._deleteHooks.bind(this, repo)
   ], function done(err) {
     if (err) return callback(err);
-    debug('finish delete henkins hooks for %s', repo);
+    debug('finish delete jenkins hooks for %s', repo);
     callback();
   });
 };
