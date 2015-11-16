@@ -99,7 +99,10 @@
 source /usr/local/cicd/node/nvm.sh
 nvm install {node}
 
-npm install
+INSTALL_MODULES = $([ ! -d node_modules ] || echo "false")
+if [ "${INSTALL_NODE_MODULES}" != "false" ]; then
+  npm install
+fi
 npm test</command>
     </hudson.tasks.Shell>
   </builders>
