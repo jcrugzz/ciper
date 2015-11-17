@@ -100,7 +100,7 @@ source /usr/local/cicd/node/nvm.sh
 nvm install {node}
 
 INSTALL_MODULES = $([ ! -d node_modules ] || echo "false")
-if [ "${INSTALL_NODE_MODULES}" != "false" ]; then
+if [ "${INSTALL_MODULES}" != "false" ]; then
   npm install
 fi
 npm test</command>
