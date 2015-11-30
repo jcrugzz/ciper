@@ -31,7 +31,7 @@ function Ciper(options) {
   // This should be the SEED set but in general we should serialize this to disk
   // or pass some kind of simple database object to read from
   //
-  this.organizations = options.orgs;
+  this.organizations = options.orgs || options.organizations;
   //
   // Jenkins admins
   //
@@ -352,9 +352,11 @@ Ciper.prototype.createJob = function (pkg, callback) {
     this.jenkins.job.create([name, 'build', 'pr'].join('-'),
       this.templateXml(xml, assign({
         admins: this.admins.join(' '),
+        orgs: (this.organizations || []).join(' '),
+        permitAll: !this.organizations ? true : false,
         credentialsId: this.credentialsId,
         gitHubAuthId: this.gitHubAuthId,
-        nodeType: this.nodeType
+        nodeType: this.nodeType,
       }, pkg)), err => {
         if (err && /already exists/.test(err.message)) return callback();
 

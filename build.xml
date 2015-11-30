@@ -64,12 +64,12 @@
       <configVersion>1</configVersion>
       <adminlist>{admins}</adminlist>
       <allowMembersOfWhitelistedOrgsAsAdmin>false</allowMembersOfWhitelistedOrgsAsAdmin>
-      <orgslist>PC</orgslist>
+      <orgslist>{orgs}</orgslist>
       <cron>H/5 * * * *</cron>
       <buildDescTemplate></buildDescTemplate>
       <onlyTriggerPhrase>false</onlyTriggerPhrase>
       <useGitHubHooks>true</useGitHubHooks>
-      <permitAll>false</permitAll>
+      <permitAll>{permitAll}</permitAll>
       <whitelist></whitelist>
       <autoCloseFailedPullRequests>false</autoCloseFailedPullRequests>
       <displayBuildErrorsOnDownstreamBuilds>false</displayBuildErrorsOnDownstreamBuilds>
@@ -99,8 +99,7 @@
 source /usr/local/cicd/node/nvm.sh
 nvm install {node}
 
-INSTALL_MODULES = $([ ! -d node_modules ] || echo "false")
-if [ "${INSTALL_MODULES}" != "false" ]; then
+if [ ! -d node_modules ]; then
   npm install
 fi
 npm test</command>
