@@ -82,6 +82,7 @@ function Ciper(options) {
   // Not sure if these are useful yet
   //
   this.pollDefaults = {};
+  this.permitAll = options.permitAll || false;
 }
 
 Ciper.prototype = new EE();
@@ -239,6 +240,7 @@ Ciper.prototype.extractNpm = function (repo, callback) {
  */
 Ciper.prototype.defaults = function (pkg, repo) {
   var pack = {};
+  var name;
   //
   // Extract proper repo URL or use the one passed in.
   //
@@ -247,7 +249,16 @@ Ciper.prototype.defaults = function (pkg, repo) {
 
   pack.repo = repo;
   pack.short = pkg.short || [proj.user, proj.repo].join('/');
-  pack.name = pkg.name;
+
+  //
+  // If we are scoped normalize the name to something `-` based.
+  // This keeps us backwards compatible with naming
+  //
+  if (/^@/.test(pkg.name)) {
+    name = pkg.name.slice(1).split('/').join('-');
+  }
+
+  pack.name = name || pkg.name;
   //
   // Default to 4.2 because thats what we should be assuming at this point
   //
@@ -340,6 +351,7 @@ Ciper.prototype.createJob = function (pkg, callback) {
   var repo = pkg.repo;
   var name = pkg.name;
   debug('jenkins:create %s - %s', repo, name);
+
   //
   // Read the path to the XML file we need to template
   //
