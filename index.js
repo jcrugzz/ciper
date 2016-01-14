@@ -205,6 +205,10 @@ Ciper.prototype.unsync = function (options, callback) {
   return this.gen('unsync', this.unsetup.bind(this))(options, callback);
 };
 
+Ciper.prototype.resync = function (options, callback) {
+  return this.gen('resync', this.updater.bind(this))(options, callback);
+};
+
 /**
  * Fetch the contents of the package.json (if it exists) and return the package
  * name. Maybe in the future this could be configurable and more generic
@@ -299,6 +303,14 @@ Ciper.prototype.setup = function (pkg, callback) {
 };
 
 /**
+ * Temp function for doing update on a jenkins job
+ */
+Ciper.prototype.updater = function (pkg, callback) {
+  pkg = this.defaults(pkg);
+  this.updateJob(pkg, callback);
+}
+
+/**
  * un-setup the given package
  */
 Ciper.prototype.unsetup = function (pkg, callback) {
@@ -361,19 +373,51 @@ Ciper.prototype.createJob = function (pkg, callback) {
     //
     // XXX. Maybe make this more configurable in the future
     //
-    this.jenkins.job.create([name, 'build', 'pr'].join('-'),
-      this.templateXml(xml, assign({
-        admins: this.admins.join(' '),
-        orgs: (this.organizations || []).join(' '),
-        permitAll: !this.organizations ? true : false,
-        credentialsId: this.credentialsId,
-        gitHubAuthId: this.gitHubAuthId,
-        nodeType: this.nodeType,
-      }, pkg)), err => {
-        if (err && /already exists/.test(err.message)) return callback();
+    var templated = this.templateXml(xml, assign({
+      admins: this.admins.join(' '),
+      orgs: (this.organizations || []).join(' '),
+      permitAll: !this.organizations || this.permitAll ? true : false,
+      credentialsId: this.credentialsId,
+      gitHubAuthId: this.gitHubAuthId,
+      nodeType: this.nodeType,
+    }, pkg));
 
-        callback(err);
-      });
+    this.jenkins.job.create([name, 'build', 'pr'].join('-'), templated, err => {
+      if (err && /already exists/.test(err.message)) return callback();
+
+      callback(err);
+    });
+  });
+};
+
+/**
+ * Modify the jenkins job to permitAll people
+ */
+Ciper.prototype.updateJob = function (pkg, callback) {
+  var repo = pkg.repo;
+  var name = pkg.name;
+  debug('jenkins:update %s - %s', repo, name);
+  var key = [name, 'build', 'pr'].join('-');
+
+  this.jenkins.job.config(key, (err, config) => {
+    if (err) {
+      debug('jenkins:update %s - Error: %s', name, err.message);
+      return callback(err);
+    }
+    if (!config) {
+      debug('jenkins:update %s - No job config found', name);
+      return callback();
+    }
+
+    config = config.replace('<permitAll>false</permitAll>', '<permitAll>true</permitAll>');
+    this.jenkins.job.config(key, config, (err) => {
+      if (err) {
+        debug('jenkins:update %s - Error: %s', name, err.message);
+        return callback(err);
+      }
+      debug('jenkins:update %s - Success!', name);
+      callback();
+    });
   });
 };
 
