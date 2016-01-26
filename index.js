@@ -62,7 +62,11 @@ function Ciper(options) {
   // For now assume 1
   //
   this.jenkinsUrl = options.jenkins;
-  this.jenkins = new Jenkins(options.jenkins);
+  this.jenkins = new Jenkins({
+    url: this.jenkinsUrl,
+    rejectUnauthorized: false
+  });
+
   this.interval = options.interval || 36E5; // 1 hr
 
   //
@@ -403,7 +407,8 @@ Ciper.prototype.createHooks = function (repo, callback) {
     this.makeHook.bind(this, repo, {
       name: 'jenkins',
       config: {
-        jenkins_hook_url: url.resolve(this.jenkinsUrl, '/github_webhook/')
+        jenkins_hook_url: url.resolve(this.jenkinsUrl, '/github_webhook/'),
+        insecure_ssl: '1'
       },
       events: ['push'],
       active: true
@@ -411,7 +416,8 @@ Ciper.prototype.createHooks = function (repo, callback) {
     this.makeHook.bind(this, repo, {
       name: 'web',
       config: {
-        url: url.resolve(this.jenkinsUrl, '/ghprbhook/')
+        url: url.resolve(this.jenkinsUrl, '/ghprbhook/'),
+        insecure_ssl: '1'
       },
       events: ['pull_request', 'pull_request_review_comment', 'issue_comment'],
       active: true
