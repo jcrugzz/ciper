@@ -12,7 +12,6 @@ var format = require('string-template');
 var debug = require('diagnostics')('ciper');
 
 module.exports = Ciper;
-
 //
 // 1. I need to add the hook events for both the git and github plugin into
 // jenkins that will only trigger on PR and comments for a repo. Ensure the repo
@@ -37,6 +36,7 @@ function Ciper(options) {
   //
   this.admins = options.admins || [];
   this.nodeType = options.nodeType || '';
+  this.isMaster = options.isMaster || false;
 
   //
   // Other properties that need to be templated into the jenkins build
@@ -365,7 +365,9 @@ Ciper.prototype.createJob = function (pkg, callback) {
     //
     // XXX. Maybe make this more configurable in the future
     //
-    this.jenkins.job.create([name, 'build', 'pr'].join('-'),
+    var jobName = [name, 'build', this.isMaster ? 'master' : 'pr'].join('-');
+    console.log('job name: ', jobName);
+    this.jenkins.job.create(jobName,
       this.templateXml(xml, assign({
         admins: this.admins.join(' '),
         orgs: (this.organizations || []).join(' '),
