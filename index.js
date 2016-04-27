@@ -366,7 +366,11 @@ Ciper.prototype.createJob = function (pkg, callback) {
     // XXX. Maybe make this more configurable in the future
     //
     var jobName = [name, 'build', this.isMaster ? 'master' : 'pr'].join('-');
-    console.log('job name: ', jobName);
+    var branchName = this.isMaster ? 'master' : '${{sha1}}';
+    debug({
+      jobName: jobName,
+      branchName: branchName
+    });
     this.jenkins.job.create(jobName,
       this.templateXml(xml, assign({
         admins: this.admins.join(' '),
@@ -375,6 +379,7 @@ Ciper.prototype.createJob = function (pkg, callback) {
         credentialsId: this.credentialsId,
         gitHubAuthId: this.gitHubAuthId,
         nodeType: this.nodeType,
+        branchName: branchName
       }, pkg)), err => {
         if (err && /already exists/.test(err.message)) return callback();
 
@@ -388,8 +393,9 @@ Ciper.prototype.createJob = function (pkg, callback) {
  */
 Ciper.prototype.deleteJob = function (pkg, callback) {
   var name = pkg.name;
+  var jobName = [name, 'build', this.isMaster ? 'master' : 'pr'].join('-');
 
-  this.jenkins.job.destroy([name, 'build', 'pr'].join('-'), callback);
+  this.jenkins.job.destroy(jobName, callback);
 };
 
 /**
@@ -405,6 +411,9 @@ Ciper.prototype.templateXml = function (xml, pkg) {
  * @param repo
  */
 Ciper.prototype.createHooks = function (repo, callback) {
+
+  var githubEvents = this.isMaster ? ['push'] : ['pull_request', 'pull_request_review_comment', 'issue_comment'];
+
   async.parallel([
     this.makeHook.bind(this, repo, {
       name: 'jenkins',
@@ -421,7 +430,7 @@ Ciper.prototype.createHooks = function (repo, callback) {
         url: url.resolve(this.jenkinsUrl, '/ghprbhook/'),
         insecure_ssl: '1'
       },
-      events: ['pull_request', 'pull_request_review_comment', 'issue_comment'],
+      events: githubEvents,
       active: true
     })
   ], callback);
