@@ -36,7 +36,7 @@ function Ciper(options) {
   //
   this.admins = options.admins || [];
   this.nodeType = options.nodeType || '';
-  this.isMaster = options.isMaster || false;
+  this.type = options.type || 'pr';
 
   //
   // Other properties that need to be templated into the jenkins build
@@ -365,8 +365,8 @@ Ciper.prototype.createJob = function (pkg, callback) {
     //
     // XXX. Maybe make this more configurable in the future
     //
-    var jobName = [name, 'build', this.isMaster ? 'master' : 'pr'].join('-');
-    var branchName = this.isMaster ? 'master' : '${{sha1}}';
+    var jobName = [name, 'build', this.type].join('-');
+    var branchName = this.type === 'pr' ? '${{sha1}}' : this.type;
     debug({
       jobName: jobName,
       branchName: branchName
@@ -393,7 +393,7 @@ Ciper.prototype.createJob = function (pkg, callback) {
  */
 Ciper.prototype.deleteJob = function (pkg, callback) {
   var name = pkg.name;
-  var jobName = [name, 'build', this.isMaster ? 'master' : 'pr'].join('-');
+  var jobName = [name, 'build', this.type].join('-');
 
   this.jenkins.job.destroy(jobName, callback);
 };
@@ -412,7 +412,7 @@ Ciper.prototype.templateXml = function (xml, pkg) {
  */
 Ciper.prototype.createHooks = function (repo, callback) {
 
-  var githubEvents = this.isMaster ? ['push'] : ['pull_request', 'pull_request_review_comment', 'issue_comment'];
+  var githubEvents = this.type !== 'pr' ? ['push'] : ['pull_request', 'pull_request_review_comment', 'issue_comment'];
 
   async.parallel([
     this.makeHook.bind(this, repo, {
