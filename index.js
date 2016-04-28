@@ -11,8 +11,25 @@ var assign = require('object-assign');
 var format = require('string-template');
 var debug = require('diagnostics')('ciper');
 
-module.exports = Ciper;
+var validTypes = ['master', 'pr'];
+//
+// Mapping for events based on the type we are given in the constructor
+//
+var maps = {
+  branch: {
+    pr: '${{sha1}}'
+  },
+  ghEvents: {
+    master: ['push'],
+    pr: ['pull_request', 'pull_request_review_comment', 'issue_comment']
+  },
+  xmlFiles: {
+    master: 'build-master.xml',
+    pr: 'build.xml'
+  }
+}
 
+module.exports = Ciper;
 //
 // 1. I need to add the hook events for both the git and github plugin into
 // jenkins that will only trigger on PR and comments for a repo. Ensure the repo
@@ -37,6 +54,9 @@ function Ciper(options) {
   //
   this.admins = options.admins || [];
   this.nodeType = options.nodeType || '';
+  this.type = options.type || 'pr';
+
+  if (validTypes.indexOf(this.type) === -1) throw new Error(`Invalid type ${this.type}`);
 
   //
   // Other properties that need to be templated into the jenkins build
@@ -50,11 +70,6 @@ function Ciper(options) {
   // Expected to be an object with `url` and `tokens` keys
   //
   this.git = new GitHulk(options.github);
-
-  //
-  // XML used to create the jenkins job that we need to template
-  //
-  this.xmlPath = options.xmlPath || path.join(__dirname, 'build.xml');
 
   //
   // Eventually we might want this to be a set of jenkins instances that are
@@ -359,13 +374,20 @@ Ciper.prototype.createJob = function (pkg, callback) {
   //
   // Read the path to the XML file we need to template
   //
-  fs.readFile(this.xmlPath, 'utf8', (err, xml) => {
+  var xmlPath = path.join(__dirname, maps.xmlFiles[this.type]);
+  fs.readFile(xmlPath, 'utf8', (err, xml) => {
     if (err) { return callback(err); }
 
     //
     // XXX. Maybe make this more configurable in the future
     //
-    this.jenkins.job.create([name, 'build', 'pr'].join('-'),
+    var jobName = [name, 'build', this.type].join('-');
+    var branchName = maps.branch[this.type] || this.type;
+    debug({
+      jobName: jobName,
+      branchName: branchName
+    });
+    this.jenkins.job.create(jobName,
       this.templateXml(xml, assign({
         admins: this.admins.join(' '),
         orgs: (this.organizations || []).join(' '),
@@ -373,6 +395,7 @@ Ciper.prototype.createJob = function (pkg, callback) {
         credentialsId: this.credentialsId,
         gitHubAuthId: this.gitHubAuthId,
         nodeType: this.nodeType,
+        branchName: branchName
       }, pkg)), err => {
         if (err && /already exists/.test(err.message)) return callback();
 
@@ -386,8 +409,9 @@ Ciper.prototype.createJob = function (pkg, callback) {
  */
 Ciper.prototype.deleteJob = function (pkg, callback) {
   var name = pkg.name;
+  var jobName = [name, 'build', this.type].join('-');
 
-  this.jenkins.job.destroy([name, 'build', 'pr'].join('-'), callback);
+  this.jenkins.job.destroy(jobName, callback);
 };
 
 /**
@@ -403,6 +427,9 @@ Ciper.prototype.templateXml = function (xml, pkg) {
  * @param repo
  */
 Ciper.prototype.createHooks = function (repo, callback) {
+
+  var githubEvents = map.ghEvents[this.type];
+
   async.parallel([
     this.makeHook.bind(this, repo, {
       name: 'jenkins',
@@ -419,7 +446,7 @@ Ciper.prototype.createHooks = function (repo, callback) {
         url: url.resolve(this.jenkinsUrl, '/ghprbhook/'),
         insecure_ssl: '1'
       },
-      events: ['pull_request', 'pull_request_review_comment', 'issue_comment'],
+      events: githubEvents,
       active: true
     })
   ], callback);
