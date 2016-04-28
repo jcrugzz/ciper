@@ -11,6 +11,24 @@ var assign = require('object-assign');
 var format = require('string-template');
 var debug = require('diagnostics')('ciper');
 
+var validTypes = ['master', 'pr'];
+//
+// Mapping for events based on the type we are given in the constructor
+//
+var maps = {
+  branch: {
+    pr: '${{sha1}}'
+  },
+  ghEvents: {
+    master: ['push'],
+    pr: ['pull_request', 'pull_request_review_comment', 'issue_comment']
+  },
+  xmlFiles: {
+    master: 'build-master.xml',
+    pr: 'build.xml'
+  }
+}
+
 module.exports = Ciper;
 //
 // 1. I need to add the hook events for both the git and github plugin into
@@ -38,6 +56,8 @@ function Ciper(options) {
   this.nodeType = options.nodeType || '';
   this.type = options.type || 'pr';
 
+  if (validTypes.indexOf(this.type) === -1) throw new Error(`Invalid type ${this.type}`);
+
   //
   // Other properties that need to be templated into the jenkins build
   // TODO: Figure out a better way for these to be injected into the templating
@@ -50,11 +70,6 @@ function Ciper(options) {
   // Expected to be an object with `url` and `tokens` keys
   //
   this.git = new GitHulk(options.github);
-
-  //
-  // XML used to create the jenkins job that we need to template
-  //
-  this.xmlPath = options.xmlPath || path.join(__dirname, 'build.xml');
 
   //
   // Eventually we might want this to be a set of jenkins instances that are
@@ -359,14 +374,15 @@ Ciper.prototype.createJob = function (pkg, callback) {
   //
   // Read the path to the XML file we need to template
   //
-  fs.readFile(this.xmlPath, 'utf8', (err, xml) => {
+  var xmlPath = path.join(__dirname, maps.xmlFiles[this.type]);
+  fs.readFile(xmlPath, 'utf8', (err, xml) => {
     if (err) { return callback(err); }
 
     //
     // XXX. Maybe make this more configurable in the future
     //
     var jobName = [name, 'build', this.type].join('-');
-    var branchName = this.type === 'pr' ? '${{sha1}}' : this.type;
+    var branchName = maps.branch[this.type] || this.type;
     debug({
       jobName: jobName,
       branchName: branchName
@@ -412,7 +428,7 @@ Ciper.prototype.templateXml = function (xml, pkg) {
  */
 Ciper.prototype.createHooks = function (repo, callback) {
 
-  var githubEvents = this.type !== 'pr' ? ['push'] : ['pull_request', 'pull_request_review_comment', 'issue_comment'];
+  var githubEvents = map.ghEvents[this.type];
 
   async.parallel([
     this.makeHook.bind(this, repo, {
