@@ -1,6 +1,6 @@
 # ciper
 
-Easily instantiate a PR test workflow with jenkins and github
+Easily instantiate a PR and a master branch test workflow with jenkins and github.
 
 ## install
 
@@ -11,7 +11,7 @@ npm i ciper --save
 ## example
 
 Use ciper to poll the github API for various organizations to sync projects of
-those organizations with jenkins in order for Test PR webhooks to work
+those organizations with jenkins in order for Test PR and master branch webhooks to work
 seamlessly
 
 ```js
@@ -24,7 +24,8 @@ var ciper = new Ciper({
   },
   jenkins: 'http://myjenkinsurl',
   credentialsId: 'uuid', // pretend this is a UUID
-  gitHubAuthId: '' // TODO: figure out what this is used for with the github plugin
+  gitHubAuthId: '' // TODO: figure out what this is used for with the github plugin,
+  type: 'master' // Allowed values: ['master', 'pr']
 });
 
 //
@@ -40,7 +41,7 @@ ciper.poll(3E6)
     console.log('Github poll started');
   })
   .on('poll:finish', function () {
-    console.log('Github poll finished, repos synced'); 
+    console.log('Github poll finished, repos synced');
   })
 
 ```
