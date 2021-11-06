@@ -1,6 +1,6 @@
 {
   "name": "ciper",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "A CI-PR creator that queries the github API and creates jobs in jenkins for running tests on PR and master",
   "main": "index.js",
   "scripts": {
