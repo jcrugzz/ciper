@@ -1,0 +1,183 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description>Build and test {name} based on a pull request.</description>
+  <logRotator class="hudson.tasks.LogRotator">
+    <daysToKeep>-1</daysToKeep>
+    <numToKeep>5</numToKeep>
+    <artifactDaysToKeep>-1</artifactDaysToKeep>
+    <artifactNumToKeep>-1</artifactNumToKeep>
+  </logRotator>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.14.0">
+      <projectUrl>{githubUrl}/{short}</projectUrl>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
+    <com.chikli.hudson.plugin.naginator.NaginatorOptOutProperty plugin="naginator@1.15">
+      <optOut>false</optOut>
+    </com.chikli.hudson.plugin.naginator.NaginatorOptOutProperty>
+    <jenkins.plugins.slack.SlackNotifier_-SlackJobProperty plugin="slack@1.8">
+      <teamDomain></teamDomain>
+      <token></token>
+      <room></room>
+      <startNotification>false</startNotification>
+      <notifySuccess>false</notifySuccess>
+      <notifyAborted>false</notifyAborted>
+      <notifyNotBuilt>false</notifyNotBuilt>
+      <notifyUnstable>false</notifyUnstable>
+      <notifyFailure>false</notifyFailure>
+      <notifyBackToNormal>false</notifyBackToNormal>
+      <notifyRepeatedFailure>false</notifyRepeatedFailure>
+      <includeTestSummary>false</includeTestSummary>
+      <showCommitList>false</showCommitList>
+      <includeCustomMessage>false</includeCustomMessage>
+      <customMessage></customMessage>
+    </jenkins.plugins.slack.SlackNotifier_-SlackJobProperty>
+  </properties>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@2.4.0">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <refspec>+refs/pull/*:refs/remotes/origin/pr/*</refspec>
+        <url>{repo}</url>
+        <credentialsId>{credentialsId}</credentialsId>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>{branchName}</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions/>
+  </scm>
+  <assignedNode>{nodeType}</assignedNode>
+  <canRoam>false</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers>
+    <org.jenkinsci.plugins.ghprb.GhprbTrigger plugin="ghprb@1.27">
+      <spec>H/5 * * * *</spec>
+      <triggerPhrase></triggerPhrase>
+      <configVersion>1</configVersion>
+      <adminlist>{admins}</adminlist>
+      <allowMembersOfWhitelistedOrgsAsAdmin>false</allowMembersOfWhitelistedOrgsAsAdmin>
+      <orgslist>{orgs}</orgslist>
+      <cron>H/5 * * * *</cron>
+      <buildDescTemplate></buildDescTemplate>
+      <onlyTriggerPhrase>false</onlyTriggerPhrase>
+      <useGitHubHooks>true</useGitHubHooks>
+      <permitAll>{permitAll}</permitAll>
+      <whitelist></whitelist>
+      <autoCloseFailedPullRequests>false</autoCloseFailedPullRequests>
+      <displayBuildErrorsOnDownstreamBuilds>false</displayBuildErrorsOnDownstreamBuilds>
+      <whiteListTargetBranches>
+        <org.jenkinsci.plugins.ghprb.GhprbBranch>
+          <branch></branch>
+        </org.jenkinsci.plugins.ghprb.GhprbBranch>
+      </whiteListTargetBranches>
+      <project>{name}-build-pr</project>
+      <__project class="project" reference="../../.."/>
+      <gitHubAuthId>{gitHubAuthId}</gitHubAuthId>
+      <extensions>
+        <org.jenkinsci.plugins.ghprb.extensions.status.GhprbSimpleStatus>
+          <commitStatusContext></commitStatusContext>
+          <triggeredStatus></triggeredStatus>
+          <startedStatus></startedStatus>
+          <statusUrl></statusUrl>
+        </org.jenkinsci.plugins.ghprb.extensions.status.GhprbSimpleStatus>
+      </extensions>
+    </org.jenkinsci.plugins.ghprb.GhprbTrigger>
+  </triggers>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>set +x -e
+
+source /usr/local/cicd/node/nvm.sh
+nvm install {node}
+
+if [ ! -d node_modules ]; then
+  npm install
+fi
+npm test</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <hudson.plugins.cobertura.CoberturaPublisher plugin="cobertura@1.9.7">
+      <coberturaReportFile>coverage/cobertura-coverage.xml</coberturaReportFile>
+      <onlyStable>false</onlyStable>
+      <failUnhealthy>false</failUnhealthy>
+      <failUnstable>false</failUnstable>
+      <autoUpdateHealth>false</autoUpdateHealth>
+      <autoUpdateStability>false</autoUpdateStability>
+      <zoomCoverageChart>false</zoomCoverageChart>
+      <maxNumberOfBuilds>0</maxNumberOfBuilds>
+      <failNoReports>false</failNoReports>
+      <healthyTarget>
+        <targets class="enum-map" enum-type="hudson.plugins.cobertura.targets.CoverageMetric">
+          <entry>
+            <hudson.plugins.cobertura.targets.CoverageMetric>METHOD</hudson.plugins.cobertura.targets.CoverageMetric>
+            <int>0</int>
+          </entry>
+          <entry>
+            <hudson.plugins.cobertura.targets.CoverageMetric>LINE</hudson.plugins.cobertura.targets.CoverageMetric>
+            <int>0</int>
+          </entry>
+          <entry>
+            <hudson.plugins.cobertura.targets.CoverageMetric>CONDITIONAL</hudson.plugins.cobertura.targets.CoverageMetric>
+            <int>0</int>
+          </entry>
+        </targets>
+      </healthyTarget>
+      <unhealthyTarget>
+        <targets class="enum-map" enum-type="hudson.plugins.cobertura.targets.CoverageMetric">
+          <entry>
+            <hudson.plugins.cobertura.targets.CoverageMetric>METHOD</hudson.plugins.cobertura.targets.CoverageMetric>
+            <int>0</int>
+          </entry>
+          <entry>
+            <hudson.plugins.cobertura.targets.CoverageMetric>LINE</hudson.plugins.cobertura.targets.CoverageMetric>
+            <int>0</int>
+          </entry>
+          <entry>
+            <hudson.plugins.cobertura.targets.CoverageMetric>CONDITIONAL</hudson.plugins.cobertura.targets.CoverageMetric>
+            <int>0</int>
+          </entry>
+        </targets>
+      </unhealthyTarget>
+      <failingTarget>
+        <targets class="enum-map" enum-type="hudson.plugins.cobertura.targets.CoverageMetric">
+          <entry>
+            <hudson.plugins.cobertura.targets.CoverageMetric>METHOD</hudson.plugins.cobertura.targets.CoverageMetric>
+            <int>0</int>
+          </entry>
+          <entry>
+            <hudson.plugins.cobertura.targets.CoverageMetric>LINE</hudson.plugins.cobertura.targets.CoverageMetric>
+            <int>0</int>
+          </entry>
+          <entry>
+            <hudson.plugins.cobertura.targets.CoverageMetric>CONDITIONAL</hudson.plugins.cobertura.targets.CoverageMetric>
+            <int>0</int>
+          </entry>
+        </targets>
+      </failingTarget>
+      <sourceEncoding>ASCII</sourceEncoding>
+    </hudson.plugins.cobertura.CoberturaPublisher>
+  </publishers>
+  <buildWrappers>
+    <hudson.plugins.build__timeout.BuildTimeoutWrapper plugin="build-timeout@1.15">
+      <strategy class="hudson.plugins.build_timeout.impl.NoActivityTimeOutStrategy">
+        <timeoutSecondsString>600</timeoutSecondsString>
+      </strategy>
+      <operationList>
+        <hudson.plugins.build__timeout.operations.FailOperation/>
+      </operationList>
+    </hudson.plugins.build__timeout.BuildTimeoutWrapper>
+    <hudson.plugins.ansicolor.AnsiColorBuildWrapper plugin="ansicolor@0.4.1">
+      <colorMapName>xterm</colorMapName>
+    </hudson.plugins.ansicolor.AnsiColorBuildWrapper>
+  </buildWrappers>
+</project>
