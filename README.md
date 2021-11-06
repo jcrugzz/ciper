@@ -19,7 +19,7 @@ var Ciper = require('ciper');
 
 var ciper = new Ciper({
   organizations: ['nodejitsu', 'warehouseai', 'godaddy']
-  ghTemplateUrl: 'https://github.com'"
+  ghTemplateUrl: 'https://github.com',
   github: {
     url: 'https://api.github.com'
   },
